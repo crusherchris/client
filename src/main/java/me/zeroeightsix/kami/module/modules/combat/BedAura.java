@@ -53,11 +53,11 @@ import static me.zeroeightsix.kami.util.text.MessageSendHelper.sendChatMessage;
  * Updated by Afel on 08/06/20
  */
 @Module.Info(
-        name = "CrystalAura",
+        name = "BedAura",
         category = Module.Category.COMBAT,
-        description = "Places End Crystals to kill enemies"
+        description = "Places Beds in the Nether Crystals to kill enemies"
 )
-public class CrystalAura extends Module {
+public class BedAura extends Module {
     private Setting<Boolean> defaultSetting = register(Settings.b("Defaults", false));
     private Setting<Page> p = register(Settings.enumBuilder(Page.class).withName("Page").withValue(Page.ONE).build());
     /* Page One */
@@ -105,13 +105,13 @@ public class CrystalAura extends Module {
     private boolean isAttacking = false;
     private int oldSlot = -1;
 
-    public static CrystalAura INSTANCE;
-    private static EntityEnderCrystal lastCrystal;
-    private static List<EntityEnderCrystal> ignoredCrystals = new ArrayList<>();
+    public static BedAura INSTANCE;
+    private static EntityBed lastBed;
+    private static List<EntityBed> ignoredCrystals = new ArrayList<>();
     private static int hitTries = 0;
     private static boolean togglePitch = false;
 
-    public CrystalAura() {
+    public BedAura() {
         super();
 
         defaultSetting.settingListener = setting -> {
@@ -186,7 +186,7 @@ public class CrystalAura extends Module {
                     if (!place.getValue() && wasPlacing) place.setValue(true);
                 }
                 if (explodeBehavior.getValue() == ExplodeBehavior.ALWAYS) {
-                    explode(crystal);
+                    explode(bed);
                 }
                 for (Vec3d vecOffset : holeOffset) { /* for placeholder offset for each BlockPos in the list holeOffset */
                     BlockPos offset = new BlockPos(vecOffset.x, vecOffset.y, vecOffset.z);
@@ -196,16 +196,16 @@ public class CrystalAura extends Module {
                 }
                 if (explodeBehavior.getValue() == ExplodeBehavior.HOLE_ONLY) {
                     if (holeBlocks == 5) {
-                        explode(crystal);
+                        explode(bed);
                     }
                 }
                 if (explodeBehavior.getValue() == ExplodeBehavior.PREVENT_SUICIDE) {
-                    if (mc.player.getPositionVector().distanceTo(crystal.getPositionVector()) <= 0.5 && mc.player.getPosition().getY() == crystal.getPosition().getY() || mc.player.getPositionVector().distanceTo(crystal.getPositionVector()) >= 2.3 && mc.player.getPosition().getY() == crystal.getPosition().getY() || mc.player.getPositionVector().distanceTo(crystal.getPositionVector()) >= 0.5 && mc.player.getPosition().getY() != crystal.getPosition().getY()) {
-                        explode(crystal);
+                    if (mc.player.getPositionVector().distanceTo(bed.getPositionVector()) <= 0.5 && mc.player.getPosition().getY() == crystal.getPosition().getY() || mc.player.getPositionVector().distanceTo(crystal.getPositionVector()) >= 2.3 && mc.player.getPosition().getY() == crystal.getPosition().getY() || mc.player.getPositionVector().distanceTo(crystal.getPositionVector()) >= 0.5 && mc.player.getPosition().getY() != crystal.getPosition().getY()) {
+                        explode(bed);
                     }
                 }
                 if (explodeBehavior.getValue() == ExplodeBehavior.LEFT_CLICK_ONLY && mc.gameSettings.keyBindAttack.isKeyDown()) {
-                    explode(crystal);
+                    explode(bed);
                 }
                 if (sneakEnable.getValue() && mc.player.isSneaking() && holeBlocks != 5) {
                     Surround.INSTANCE.enable();
@@ -222,20 +222,20 @@ public class CrystalAura extends Module {
             isAttacking = false;
         }
 
-        int crystalSlot = mc.player.getHeldItemMainhand().getItem() == Items.END_CRYSTAL ? mc.player.inventory.currentItem : -1;
+        int BedSlot = mc.player.getHeldItemMainhand().getItem() == Items.WHITE_BED ? mc.player.inventory.currentItem : -1;
         if (crystalSlot == -1) {
             for (int l = 0; l < 9; ++l) {
-                if (mc.player.inventory.getStackInSlot(l).getItem() == Items.END_CRYSTAL) {
-                    crystalSlot = l;
+                if (mc.player.inventory.getStackInSlot(l).getItem() == Items.WHITE_BED) {
+                    BedSlot = l;
                     break;
                 }
             }
         }
 
         boolean offhand = false;
-        if (mc.player.getHeldItemOffhand().getItem() == Items.END_CRYSTAL) {
+        if (mc.player.getHeldItemOffhand().getItem() == Items.WHITE_BED) {
             offhand = true;
-        } else if (crystalSlot == -1) {
+        } else if (BedSlot == -1) {
             return;
         }
 
@@ -457,7 +457,7 @@ public class CrystalAura extends Module {
     }
 
     public static float calculateDamage(EntityEnderCrystal crystal, Entity entity) {
-        return calculateDamage(crystal.posX, crystal.posY, crystal.posZ, entity);
+        return calculateDamage(bed.posX, crystal.posY, crystal.posZ, entity);
     }
 
 
@@ -505,22 +505,22 @@ public class CrystalAura extends Module {
         resetRotation();
     }
 
-    public void explode(EntityEnderCrystal crystal) {
+    public void explode(EntityWhite Bed) {
         if (crystal == null) return;
 
-        if (lastCrystal == crystal) hitTries++;
+        if (lastBed == bed) hitTries++;
         else {
-            lastCrystal = crystal;
+            lastBed = Bed;
             hitTries = 0;
         }
 
         try {
             if (hitAttempts.getValue() != -1 && hitTries > hitAttempts.getValue()) {
-                ignoredCrystals.add(crystal);
+                ignoredBed.add(Bed);
                 hitTries = 0;
             } else {
                 lookAtPacket(crystal.getPositionVector());
-                mc.playerController.attackEntity(mc.player, crystal);
+                mc.playerController.attackEntity(mc.player, BEd);
                 mc.player.swingArm(EnumHand.MAIN_HAND);
             }
         } catch (Throwable ignored) {
@@ -555,8 +555,8 @@ public class CrystalAura extends Module {
 
     private void resetHitAttempts(boolean should) {
         if (should) {
-            lastCrystal = null;
-            ignoredCrystals = null;
+            lastBed = null;
+            ignoredBEd = null;
             hitTries = 0;
         } else if (resetTime()) {
             sendMessage("&l&9Reset&r&9 hit attempts crystals");
